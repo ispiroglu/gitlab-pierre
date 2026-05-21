@@ -1,4 +1,5 @@
 import type { PopupState } from "../background/background";
+import { getChangesPage } from "../changes-page/changes-page";
 import { BACKGROUND_MESSAGE_TYPE } from "../shared/extension-messages";
 import { originToHostname } from "../registrability/registrability";
 import { POPUP_TOP_STATE, resolvePopupTopState } from "./popup-state";
@@ -9,10 +10,24 @@ const REGISTER_BUTTON_LABEL = "Register this GitLab";
 
 const BUILT_IN_BADGE_LABEL = "Always on";
 
+const RELOAD_GUIDANCE_TEXT =
+	"Reload this tab to activate Pierre on the current changes page.";
+
+const RELOAD_TAB_BUTTON_LABEL = "Reload tab";
+
 async function getActiveTabUrl(): Promise<string | null> {
 	const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
 	const activeTab = tabs[0];
 	return activeTab?.url ?? null;
+}
+
+async function reloadActiveTab(): Promise<void> {
+	const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+	const activeTab = tabs[0];
+	if (activeTab?.id == null) {
+		return;
+	}
+	await chrome.tabs.reload(activeTab.id);
 }
 
 async function loadPopupState(): Promise<PopupState> {
@@ -47,6 +62,18 @@ function createElement<K extends keyof HTMLElementTagNameMap>(
 		element.className = className;
 	}
 	return element;
+}
+
+function isActiveTabChangesPage(activeTabUrl: string | null): boolean {
+	if (activeTabUrl == null) {
+		return false;
+	}
+	try {
+		const parsed = new URL(activeTabUrl);
+		return getChangesPage(parsed) != null;
+	} catch {
+		return false;
+	}
 }
 
 function renderRegisterSection(
@@ -97,6 +124,31 @@ function renderRegisterSection(
 	const status = createElement("p", "popup-status");
 	status.textContent = `Registered: ${registrability.origin}`;
 	section.append(status);
+	container.append(section);
+
+	if (isActiveTabChangesPage(activeTabUrl)) {
+		renderReloadGuidance(container);
+	}
+}
+
+function renderReloadGuidance(container: HTMLElement): void {
+	const section = createElement(
+		"section",
+		"popup-section popup-reload-section",
+	);
+	const guidance = createElement("p", "popup-note");
+	guidance.textContent = RELOAD_GUIDANCE_TEXT;
+	const actionRow = createElement("div", "popup-action-row");
+	const reloadButton = createElement(
+		"button",
+		"popup-button popup-button-secondary",
+	);
+	reloadButton.textContent = RELOAD_TAB_BUTTON_LABEL;
+	reloadButton.addEventListener("click", () => {
+		void reloadActiveTab();
+	});
+	actionRow.append(reloadButton);
+	section.append(guidance, actionRow);
 	container.append(section);
 }
 
