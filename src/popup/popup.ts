@@ -1,24 +1,13 @@
 import type { PopupState } from "../background/background";
 import { BACKGROUND_MESSAGE_TYPE } from "../shared/extension-messages";
-import {
-	originToHostname,
-	REGISTRABILITY_REASON,
-} from "../registrability/registrability";
+import { originToHostname } from "../registrability/registrability";
+import { POPUP_TOP_STATE, resolvePopupTopState } from "./popup-state";
 
 const POPUP_ROOT_ID = "popup-root";
 
 const REGISTER_BUTTON_LABEL = "Register this GitLab";
 
 const BUILT_IN_BADGE_LABEL = "Always on";
-
-const REGISTRATION_HINT_BY_REASON: Record<string, string> = {
-	[REGISTRABILITY_REASON.NOT_HTTPS]:
-		"Open an HTTPS GitLab page to register an instance.",
-	[REGISTRABILITY_REASON.MISSING_GITLAB_ROUTE]:
-		"Open a GitLab page that includes /-/ in the URL path.",
-	[REGISTRABILITY_REASON.BUILT_IN_INSTANCE]: "GitLab.com is already enabled.",
-	[REGISTRABILITY_REASON.INVALID_URL]: "This tab cannot be registered.",
-};
 
 async function getActiveTabUrl(): Promise<string | null> {
 	const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -65,10 +54,23 @@ function renderRegisterSection(
 	state: PopupState,
 	activeTabUrl: string | null,
 ): void {
-	const section = createElement("section", "popup-section");
-	const registrability = state.activeTabRegistrability;
+	const topState = resolvePopupTopState({
+		activeTabRegistrability: state.activeTabRegistrability,
+		activeTabInPool: state.activeTabInPool,
+	});
 
-	if (registrability?.registrable === true && !state.activeTabInPool) {
+	if (topState === POPUP_TOP_STATE.NON_GITLAB) {
+		return;
+	}
+
+	const registrability = state.activeTabRegistrability;
+	if (registrability?.registrable !== true) {
+		return;
+	}
+
+	const section = createElement("section", "popup-section");
+
+	if (topState === POPUP_TOP_STATE.UNREGISTERED_INSTANCE_PROMPT) {
 		const actionRow = createElement("div", "popup-action-row");
 		const registerButton = createElement(
 			"button",
@@ -92,23 +94,10 @@ function renderRegisterSection(
 		return;
 	}
 
-	if (registrability?.registrable === true && state.activeTabInPool) {
-		const status = createElement("p", "popup-status");
-		status.textContent = `Registered: ${registrability.origin}`;
-		section.append(status);
-		container.append(section);
-		return;
-	}
-
-	if (registrability != null && !registrability.registrable) {
-		const hint = REGISTRATION_HINT_BY_REASON[registrability.reason];
-		if (hint != null) {
-			const note = createElement("p", "popup-note");
-			note.textContent = hint;
-			section.append(note);
-			container.append(section);
-		}
-	}
+	const status = createElement("p", "popup-status");
+	status.textContent = `Registered: ${registrability.origin}`;
+	section.append(status);
+	container.append(section);
 }
 
 function renderInstanceList(container: HTMLElement, state: PopupState): void {
