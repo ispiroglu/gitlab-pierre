@@ -5,9 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@10.33.3",
   "scripts": {
-    "build": "pnpm typecheck && vite build --config vite.config.ts",
+    "build": "pnpm typecheck && vite build --config vite.config.ts && vite build --config vite.extension.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
-    "dev": "vite build --config vite.config.ts --watch"
+    "dev": "vite build --config vite.config.ts --watch",
+    "test": "vitest run"
   },
   "dependencies": {
     "@pierre/diffs": "1.1.22",
@@ -21,6 +22,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "typescript": "6.0.3",
-    "vite": "8.0.13"
+    "vite": "8.0.13",
+    "vitest": "3.2.4"
   }
 }

@@ -1,0 +1,166 @@
+import type { PopupState } from "../background/background";
+import { BACKGROUND_MESSAGE_TYPE } from "../shared/extension-messages";
+import {
+	originToHostname,
+	REGISTRABILITY_REASON,
+} from "../registrability/registrability";
+
+const POPUP_ROOT_ID = "popup-root";
+
+const REGISTER_BUTTON_LABEL = "Register this GitLab";
+
+const BUILT_IN_BADGE_LABEL = "Always on";
+
+const REGISTRATION_HINT_BY_REASON: Record<string, string> = {
+	[REGISTRABILITY_REASON.NOT_HTTPS]:
+		"Open an HTTPS GitLab page to register an instance.",
+	[REGISTRABILITY_REASON.MISSING_GITLAB_ROUTE]:
+		"Open a GitLab page that includes /-/ in the URL path.",
+	[REGISTRABILITY_REASON.BUILT_IN_INSTANCE]: "GitLab.com is already enabled.",
+	[REGISTRABILITY_REASON.INVALID_URL]: "This tab cannot be registered.",
+};
+
+async function getActiveTabUrl(): Promise<string | null> {
+	const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+	const activeTab = tabs[0];
+	return activeTab?.url ?? null;
+}
+
+async function loadPopupState(): Promise<PopupState> {
+	const activeTabUrl = await getActiveTabUrl();
+	return chrome.runtime.sendMessage({
+		type: BACKGROUND_MESSAGE_TYPE.GET_POPUP_STATE,
+		activeTabUrl,
+	}) as Promise<PopupState>;
+}
+
+async function registerActiveTab(activeTabUrl: string): Promise<boolean> {
+	const response = (await chrome.runtime.sendMessage({
+		type: BACKGROUND_MESSAGE_TYPE.REGISTER_INSTANCE,
+		activeTabUrl,
+	})) as { ok?: boolean };
+	return response?.ok === true;
+}
+
+async function deregisterOrigin(origin: string): Promise<void> {
+	await chrome.runtime.sendMessage({
+		type: BACKGROUND_MESSAGE_TYPE.DEREGISTER_INSTANCE,
+		origin,
+	});
+}
+
+function createElement<K extends keyof HTMLElementTagNameMap>(
+	tag: K,
+	className?: string,
+): HTMLElementTagNameMap[K] {
+	const element = document.createElement(tag);
+	if (className != null) {
+		element.className = className;
+	}
+	return element;
+}
+
+function renderRegisterSection(
+	container: HTMLElement,
+	state: PopupState,
+	activeTabUrl: string | null,
+): void {
+	const section = createElement("section", "popup-section");
+	const registrability = state.activeTabRegistrability;
+
+	if (registrability?.registrable === true && !state.activeTabInPool) {
+		const actionRow = createElement("div", "popup-action-row");
+		const registerButton = createElement(
+			"button",
+			"popup-button popup-button-primary",
+		);
+		registerButton.textContent = REGISTER_BUTTON_LABEL;
+		registerButton.addEventListener("click", () => {
+			if (activeTabUrl == null) {
+				return;
+			}
+			registerButton.disabled = true;
+			void registerActiveTab(activeTabUrl)
+				.then(() => renderPopup())
+				.catch(() => {
+					registerButton.disabled = false;
+				});
+		});
+		actionRow.append(registerButton);
+		section.append(actionRow);
+		container.append(section);
+		return;
+	}
+
+	if (registrability?.registrable === true && state.activeTabInPool) {
+		const status = createElement("p", "popup-status");
+		status.textContent = `Registered: ${registrability.origin}`;
+		section.append(status);
+		container.append(section);
+		return;
+	}
+
+	if (registrability != null && !registrability.registrable) {
+		const hint = REGISTRATION_HINT_BY_REASON[registrability.reason];
+		if (hint != null) {
+			const note = createElement("p", "popup-note");
+			note.textContent = hint;
+			section.append(note);
+			container.append(section);
+		}
+	}
+}
+
+function renderInstanceList(container: HTMLElement, state: PopupState): void {
+	const section = createElement("section", "popup-section");
+	const heading = createElement("h2", "popup-heading");
+	heading.textContent = "GitLab instances";
+	section.append(heading);
+
+	const list = createElement("ul", "popup-instance-list");
+
+	const builtInItem = createElement("li", "popup-instance-item");
+	const builtInLabel = createElement("span", "popup-instance-label");
+	builtInLabel.textContent = originToHostname(state.builtInOrigin);
+	const builtInBadge = createElement("span", "popup-instance-badge");
+	builtInBadge.textContent = BUILT_IN_BADGE_LABEL;
+	builtInItem.append(builtInLabel, builtInBadge);
+	list.append(builtInItem);
+
+	for (const origin of state.pooledOrigins) {
+		const item = createElement("li", "popup-instance-item");
+		const label = createElement("span", "popup-instance-label");
+		label.textContent = originToHostname(origin);
+		const removeButton = createElement("button", "popup-icon-button");
+		removeButton.type = "button";
+		removeButton.title = `Deregister ${origin}`;
+		removeButton.textContent = "−";
+		removeButton.addEventListener("click", () => {
+			void deregisterOrigin(origin).then(() => {
+				void renderPopup();
+			});
+		});
+		item.append(label, removeButton);
+		list.append(item);
+	}
+
+	section.append(list);
+	container.append(section);
+}
+
+async function renderPopup(): Promise<void> {
+	const root = document.getElementById(POPUP_ROOT_ID);
+	if (root == null) {
+		return;
+	}
+
+	root.replaceChildren();
+	const [state, activeTabUrl] = await Promise.all([
+		loadPopupState(),
+		getActiveTabUrl(),
+	]);
+	renderRegisterSection(root, state, activeTabUrl);
+	renderInstanceList(root, state);
+}
+
+void renderPopup();

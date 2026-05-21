@@ -1,0 +1,112 @@
+:root {
+	color-scheme: light;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+		Arial, sans-serif;
+	font-size: 13px;
+	line-height: 1.4;
+	color: #303030;
+}
+
+body {
+	margin: 0;
+	min-width: 280px;
+	max-width: 360px;
+}
+
+.popup-root {
+	padding: 12px;
+}
+
+.popup-section {
+	margin-bottom: 12px;
+}
+
+.popup-heading {
+	font-size: 12px;
+	font-weight: 600;
+	margin: 0 0 8px;
+	color: #535353;
+}
+
+.popup-action-row {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.popup-button {
+	appearance: none;
+	border: 1px solid #89888d;
+	border-radius: 4px;
+	background: #fff;
+	color: #303030;
+	cursor: pointer;
+	font: inherit;
+	padding: 6px 10px;
+	text-align: center;
+}
+
+.popup-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.popup-button-primary {
+	background: #1f75cb;
+	border-color: #1f75cb;
+	color: #fff;
+}
+
+.popup-note {
+	margin: 0;
+	color: #535353;
+	font-size: 12px;
+}
+
+.popup-instance-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.popup-instance-item {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	padding: 6px 0;
+}
+
+.popup-instance-label {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.popup-instance-badge {
+	color: #535353;
+	font-size: 11px;
+}
+
+.popup-icon-button {
+	appearance: none;
+	background: transparent;
+	border: 1px solid #89888d;
+	border-radius: 4px;
+	color: #303030;
+	cursor: pointer;
+	font: inherit;
+	line-height: 1;
+	min-width: 28px;
+	padding: 2px 6px;
+}
+
+.popup-icon-button:hover {
+	background: #f0f0f0;
+}
+
+.popup-status {
+	margin: 0;
+}
