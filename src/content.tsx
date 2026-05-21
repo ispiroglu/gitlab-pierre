@@ -32,12 +32,11 @@ import {
 } from "@pierre/trees";
 import diffCoreStyles from "@pierre-diffs-core-style";
 
+import {
+	getChangesPage,
+	type GitLabChangesPage,
+} from "./changes-page/changes-page";
 import "./styles.css";
-
-type GitLabChangesPage =
-	| { diffUrl: string; key: string; kind: "merge-request" }
-	| { diffUrl: string; key: string; kind: "commit" }
-	| { diffUrl: string; key: string; kind: "compare" };
 
 interface ParsedDiff {
 	fileInfoByPath: Map<string, FileBrowserFileInfo>;
@@ -490,41 +489,6 @@ async function run(): Promise<void> {
 	} catch (error) {
 		shellRoot.render(<ErrorState error={error} diffUrl={page.diffUrl} />);
 	}
-}
-
-function getChangesPage(location: Location): GitLabChangesPage | null {
-	const path = location.pathname;
-
-	const mergeRequestMatch = path.match(
-		/^(.*\/-\/merge_requests\/\d+)\/diffs\/?$/,
-	);
-	if (mergeRequestMatch?.[1] != null) {
-		return {
-			diffUrl: `${mergeRequestMatch[1]}.diff`,
-			key: `${mergeRequestMatch[1]}${location.search}`,
-			kind: "merge-request",
-		};
-	}
-
-	const commitMatch = path.match(/^(.*\/-\/commit\/[0-9a-f]{7,40})\/?$/i);
-	if (commitMatch?.[1] != null) {
-		return {
-			diffUrl: `${commitMatch[1]}.diff`,
-			key: `${commitMatch[1]}${location.search}`,
-			kind: "commit",
-		};
-	}
-
-	const compareMatch = path.match(/^(.*\/-\/compare\/[^/]+)\/?$/);
-	if (compareMatch?.[1] != null) {
-		return {
-			diffUrl: `${compareMatch[1]}.diff${location.search}`,
-			key: `${compareMatch[1]}${location.search}`,
-			kind: "compare",
-		};
-	}
-
-	return null;
 }
 
 function findMountTargets(): MountTargets | null {
