@@ -1,32 +1,57 @@
 :root {
-	color-scheme: light;
+	color-scheme: light only;
+	--gl-text: #303030;
+	--gl-text-secondary: #535353;
+	--gl-text-tertiary: #737278;
+	--gl-border: #dbdbdb;
+	--gl-border-strong: #89888d;
+	--gl-surface: #ffffff;
+	--gl-surface-subtle: #fbfafd;
+	--gl-primary: #1f75cb;
+	--gl-primary-hover: #1068bf;
+	--gl-focus-ring: #428fdc;
 	font-family:
-		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-		Arial, sans-serif;
-	font-size: 13px;
-	line-height: 1.4;
-	color: #303030;
+		"GitLab Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.4286;
+	color: var(--gl-text);
 }
 
 body {
 	margin: 0;
-	min-width: 280px;
-	max-width: 360px;
+	min-width: 300px;
+	max-width: 380px;
+	background: var(--gl-surface);
 }
 
 .popup-root {
-	padding: 12px;
+	padding: 16px;
 }
 
 .popup-section {
-	margin-bottom: 12px;
+	margin-bottom: 16px;
+}
+
+.popup-section:last-child {
+	margin-bottom: 0;
 }
 
 .popup-heading {
 	font-size: 12px;
 	font-weight: 600;
 	margin: 0 0 8px;
-	color: #535353;
+	color: var(--gl-text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.popup-instance-header {
+	font-size: 13px;
+	font-weight: 600;
+	margin: 0 0 10px;
+	color: var(--gl-text);
+	word-break: break-all;
 }
 
 .popup-action-row {
@@ -37,14 +62,20 @@ body {
 
 .popup-button {
 	appearance: none;
-	border: 1px solid #89888d;
-	border-radius: 4px;
-	background: #fff;
-	color: #303030;
+	border: 1px solid var(--gl-border-strong);
+	border-radius: 0.25rem;
+	background: var(--gl-surface);
+	color: var(--gl-text);
 	cursor: pointer;
 	font: inherit;
-	padding: 6px 10px;
+	font-weight: 600;
+	padding: 0.5rem 0.75rem;
 	text-align: center;
+}
+
+.popup-button:focus-visible {
+	outline: 2px solid var(--gl-focus-ring);
+	outline-offset: 1px;
 }
 
 .popup-button:disabled {
@@ -53,21 +84,40 @@ body {
 }
 
 .popup-button-primary {
-	background: #1f75cb;
-	border-color: #1f75cb;
+	background: var(--gl-primary);
+	border-color: var(--gl-primary);
 	color: #fff;
 }
 
+.popup-button-primary:hover:not(:disabled) {
+	background: var(--gl-primary-hover);
+	border-color: var(--gl-primary-hover);
+}
+
+.popup-button-secondary {
+	background: var(--gl-surface-subtle);
+	border-color: var(--gl-border);
+}
+
+.popup-button-secondary:hover:not(:disabled) {
+	background: #ececef;
+}
+
 .popup-note {
-	margin: 0;
-	color: #535353;
-	font-size: 12px;
+	margin: 0 0 8px;
+	color: var(--gl-text-secondary);
+	font-size: 13px;
+}
+
+.popup-reload-section {
+	padding-top: 4px;
 }
 
 .popup-instance-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+	border-top: 1px solid var(--gl-border);
 }
 
 .popup-instance-item {
@@ -75,7 +125,12 @@ body {
 	display: flex;
 	gap: 8px;
 	justify-content: space-between;
-	padding: 6px 0;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--gl-border);
+}
+
+.popup-instance-item:last-child {
+	border-bottom: none;
 }
 
 .popup-instance-label {
@@ -83,30 +138,35 @@ body {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	font-weight: 500;
 }
 
 .popup-instance-badge {
-	color: #535353;
-	font-size: 11px;
+	color: var(--gl-text-tertiary);
+	font-size: 12px;
+	font-weight: 400;
 }
 
 .popup-icon-button {
 	appearance: none;
 	background: transparent;
-	border: 1px solid #89888d;
-	border-radius: 4px;
-	color: #303030;
+	border: 1px solid var(--gl-border-strong);
+	border-radius: 0.25rem;
+	color: var(--gl-text-secondary);
 	cursor: pointer;
 	font: inherit;
+	font-weight: 600;
 	line-height: 1;
 	min-width: 28px;
-	padding: 2px 6px;
+	padding: 2px 8px;
 }
 
 .popup-icon-button:hover {
-	background: #f0f0f0;
+	background: var(--gl-surface-subtle);
 }
 
 .popup-status {
 	margin: 0;
+	color: var(--gl-text-secondary);
+	font-size: 13px;
 }

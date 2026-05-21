@@ -10,6 +10,8 @@ const REGISTER_BUTTON_LABEL = "Register this GitLab";
 
 const BUILT_IN_BADGE_LABEL = "Always on";
 
+const REGISTERED_STATUS_PREFIX = "Registered:";
+
 const RELOAD_GUIDANCE_TEXT =
 	"Reload this tab to activate Pierre on the current changes page.";
 
@@ -76,6 +78,12 @@ function isActiveTabChangesPage(activeTabUrl: string | null): boolean {
 	}
 }
 
+function renderInstanceHeader(section: HTMLElement, origin: string): void {
+	const header = createElement("p", "popup-instance-header");
+	header.textContent = origin;
+	section.append(header);
+}
+
 function renderRegisterSection(
 	container: HTMLElement,
 	state: PopupState,
@@ -96,6 +104,7 @@ function renderRegisterSection(
 	}
 
 	const section = createElement("section", "popup-section");
+	renderInstanceHeader(section, registrability.origin);
 
 	if (topState === POPUP_TOP_STATE.UNREGISTERED_INSTANCE_PROMPT) {
 		const actionRow = createElement("div", "popup-action-row");
@@ -122,7 +131,7 @@ function renderRegisterSection(
 	}
 
 	const status = createElement("p", "popup-status");
-	status.textContent = `Registered: ${registrability.origin}`;
+	status.textContent = `${REGISTERED_STATUS_PREFIX} ${registrability.origin}`;
 	section.append(status);
 	container.append(section);
 
