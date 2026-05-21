@@ -7,9 +7,17 @@
 	--gl-border-strong: #89888d;
 	--gl-surface: #ffffff;
 	--gl-surface-subtle: #fbfafd;
+	--gl-surface-muted: #ececef;
 	--gl-primary: #1f75cb;
 	--gl-primary-hover: #1068bf;
 	--gl-focus-ring: #428fdc;
+	--gl-success: #108548;
+	--gl-success-subtle: #ecf4ee;
+	--gl-info-subtle: #e9f3fc;
+	--gl-info-border: #9dc7f1;
+	--gl-spacing-8: 8px;
+	--gl-spacing-12: 12px;
+	--gl-spacing-16: 16px;
 	font-family:
 		"GitLab Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
 		"Helvetica Neue", Arial, sans-serif;
@@ -20,36 +28,56 @@
 
 body {
 	margin: 0;
-	min-width: 300px;
+	min-width: 320px;
 	max-width: 380px;
 	background: var(--gl-surface);
 }
 
 .popup-root {
-	padding: 16px;
+	padding: var(--gl-spacing-16);
+}
+
+.popup-brand {
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	margin: 0 0 var(--gl-spacing-12);
+	color: var(--gl-text);
 }
 
 .popup-section {
-	margin-bottom: 16px;
+	margin-bottom: var(--gl-spacing-16);
 }
 
 .popup-section:last-child {
 	margin-bottom: 0;
 }
 
+.popup-panel {
+	background: var(--gl-surface-subtle);
+	border: 1px solid var(--gl-border);
+	border-radius: 0.375rem;
+	padding: var(--gl-spacing-12);
+}
+
+.popup-panel-success {
+	background: var(--gl-success-subtle);
+	border-color: #b3d9bf;
+}
+
 .popup-heading {
 	font-size: 12px;
 	font-weight: 600;
-	margin: 0 0 8px;
+	margin: 0 0 var(--gl-spacing-8);
 	color: var(--gl-text-secondary);
 	text-transform: uppercase;
-	letter-spacing: 0.02em;
+	letter-spacing: 0.04em;
 }
 
 .popup-instance-header {
 	font-size: 13px;
 	font-weight: 600;
-	margin: 0 0 10px;
+	margin: 0 0 var(--gl-spacing-8);
 	color: var(--gl-text);
 	word-break: break-all;
 }
@@ -57,7 +85,7 @@ body {
 .popup-action-row {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: var(--gl-spacing-8);
 }
 
 .popup-button {
@@ -71,6 +99,9 @@ body {
 	font-weight: 600;
 	padding: 0.5rem 0.75rem;
 	text-align: center;
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease;
 }
 
 .popup-button:focus-visible {
@@ -95,42 +126,65 @@ body {
 }
 
 .popup-button-secondary {
-	background: var(--gl-surface-subtle);
-	border-color: var(--gl-border);
+	background: var(--gl-surface);
+	border-color: var(--gl-border-strong);
 }
 
 .popup-button-secondary:hover:not(:disabled) {
-	background: #ececef;
+	background: var(--gl-surface-muted);
 }
 
 .popup-note {
-	margin: 0 0 8px;
+	margin: 0 0 var(--gl-spacing-8);
 	color: var(--gl-text-secondary);
 	font-size: 13px;
+	line-height: 1.5;
+}
+
+.popup-callout {
+	background: var(--gl-info-subtle);
+	border: 1px solid var(--gl-info-border);
+	border-radius: 0.375rem;
+	padding: var(--gl-spacing-12);
+}
+
+.popup-callout .popup-instance-header {
+	margin-bottom: var(--gl-spacing-8);
+}
+
+.popup-callout .popup-note {
+	margin-bottom: var(--gl-spacing-12);
 }
 
 .popup-reload-section {
-	padding-top: 4px;
+	margin-top: calc(var(--gl-spacing-8) * -1);
 }
 
 .popup-instance-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
-	border-top: 1px solid var(--gl-border);
+	border: 1px solid var(--gl-border);
+	border-radius: 0.375rem;
+	overflow: hidden;
 }
 
 .popup-instance-item {
 	align-items: center;
+	background: var(--gl-surface);
 	display: flex;
-	gap: 8px;
+	gap: var(--gl-spacing-8);
 	justify-content: space-between;
-	padding: 10px 0;
+	padding: 10px var(--gl-spacing-12);
 	border-bottom: 1px solid var(--gl-border);
 }
 
 .popup-instance-item:last-child {
 	border-bottom: none;
+}
+
+.popup-instance-item-built-in {
+	background: var(--gl-surface-subtle);
 }
 
 .popup-instance-label {
@@ -142,9 +196,13 @@ body {
 }
 
 .popup-instance-badge {
-	color: var(--gl-text-tertiary);
-	font-size: 12px;
-	font-weight: 400;
+	border-radius: 1rem;
+	background: var(--gl-surface-muted);
+	color: var(--gl-text-secondary);
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 8px;
+	white-space: nowrap;
 }
 
 .popup-icon-button {
@@ -158,15 +216,41 @@ body {
 	font-weight: 600;
 	line-height: 1;
 	min-width: 28px;
-	padding: 2px 8px;
+	padding: 4px 8px;
+	transition: background-color 120ms ease;
 }
 
 .popup-icon-button:hover {
-	background: var(--gl-surface-subtle);
+	background: var(--gl-surface-muted);
+	color: var(--gl-text);
+}
+
+.popup-icon-button:focus-visible {
+	outline: 2px solid var(--gl-focus-ring);
+	outline-offset: 1px;
 }
 
 .popup-status {
+	align-items: flex-start;
+	display: flex;
+	gap: var(--gl-spacing-8);
 	margin: 0;
+}
+
+.popup-status::before {
+	content: "";
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	margin-top: 5px;
+	border-radius: 50%;
+	background: var(--gl-success);
+}
+
+.popup-status-text {
 	color: var(--gl-text-secondary);
+	flex: 1;
 	font-size: 13px;
+	line-height: 1.5;
+	word-break: break-all;
 }

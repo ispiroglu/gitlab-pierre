@@ -2,9 +2,17 @@ import type { PopupState } from "../background/background";
 import { getChangesPage } from "../changes-page/changes-page";
 import { BACKGROUND_MESSAGE_TYPE } from "../shared/extension-messages";
 import { originToHostname } from "../registrability/registrability";
+import {
+	clearPendingReloadOrigin,
+	getPendingReloadOrigin,
+	setPendingReloadOrigin,
+	shouldOfferReloadPrompt,
+} from "./pending-reload-origin";
 import { POPUP_TOP_STATE, resolvePopupTopState } from "./popup-state";
 
 const POPUP_ROOT_ID = "popup-root";
+
+const POPUP_BRAND_TITLE = "GitLab Pierre";
 
 const REGISTER_BUTTON_LABEL = "Register this GitLab";
 
@@ -78,6 +86,12 @@ function isActiveTabChangesPage(activeTabUrl: string | null): boolean {
 	}
 }
 
+function renderBrand(container: HTMLElement): void {
+	const brand = createElement("h1", "popup-brand");
+	brand.textContent = POPUP_BRAND_TITLE;
+	container.append(brand);
+}
+
 function renderInstanceHeader(section: HTMLElement, origin: string): void {
 	const header = createElement("p", "popup-instance-header");
 	header.textContent = origin;
@@ -88,6 +102,7 @@ function renderRegisterSection(
 	container: HTMLElement,
 	state: PopupState,
 	activeTabUrl: string | null,
+	pendingReloadOrigin: string | null,
 ): void {
 	const topState = resolvePopupTopState({
 		activeTabRegistrability: state.activeTabRegistrability,
@@ -103,7 +118,7 @@ function renderRegisterSection(
 		return;
 	}
 
-	const section = createElement("section", "popup-section");
+	const section = createElement("section", "popup-section popup-panel");
 	renderInstanceHeader(section, registrability.origin);
 
 	if (topState === POPUP_TOP_STATE.UNREGISTERED_INSTANCE_PROMPT) {
@@ -119,7 +134,12 @@ function renderRegisterSection(
 			}
 			registerButton.disabled = true;
 			void registerActiveTab(activeTabUrl)
-				.then(() => renderPopup())
+				.then(async (registered) => {
+					if (registered && isActiveTabChangesPage(activeTabUrl)) {
+						await setPendingReloadOrigin(registrability.origin);
+					}
+					return renderPopup();
+				})
 				.catch(() => {
 					registerButton.disabled = false;
 				});
@@ -131,30 +151,47 @@ function renderRegisterSection(
 	}
 
 	const status = createElement("p", "popup-status");
-	status.textContent = `${REGISTERED_STATUS_PREFIX} ${registrability.origin}`;
+	const statusText = createElement("span", "popup-status-text");
+	statusText.textContent = `${REGISTERED_STATUS_PREFIX} ${registrability.origin}`;
+	status.append(statusText);
+	section.classList.add("popup-panel-success");
 	section.append(status);
 	container.append(section);
 
-	if (isActiveTabChangesPage(activeTabUrl)) {
-		renderReloadGuidance(container);
+	const isChangesPage = isActiveTabChangesPage(activeTabUrl);
+	if (pendingReloadOrigin === registrability.origin && !isChangesPage) {
+		void clearPendingReloadOrigin();
+	}
+
+	if (
+		shouldOfferReloadPrompt(
+			registrability.origin,
+			isChangesPage,
+			pendingReloadOrigin,
+		)
+	) {
+		renderReloadGuidance(container, registrability.origin);
 	}
 }
 
-function renderReloadGuidance(container: HTMLElement): void {
+function renderReloadGuidance(container: HTMLElement, origin: string): void {
 	const section = createElement(
 		"section",
-		"popup-section popup-reload-section",
+		"popup-section popup-reload-section popup-callout",
 	);
+	renderInstanceHeader(section, origin);
 	const guidance = createElement("p", "popup-note");
 	guidance.textContent = RELOAD_GUIDANCE_TEXT;
 	const actionRow = createElement("div", "popup-action-row");
 	const reloadButton = createElement(
 		"button",
-		"popup-button popup-button-secondary",
+		"popup-button popup-button-primary",
 	);
 	reloadButton.textContent = RELOAD_TAB_BUTTON_LABEL;
 	reloadButton.addEventListener("click", () => {
-		void reloadActiveTab();
+		void clearPendingReloadOrigin().then(() => {
+			void reloadActiveTab();
+		});
 	});
 	actionRow.append(reloadButton);
 	section.append(guidance, actionRow);
@@ -169,7 +206,10 @@ function renderInstanceList(container: HTMLElement, state: PopupState): void {
 
 	const list = createElement("ul", "popup-instance-list");
 
-	const builtInItem = createElement("li", "popup-instance-item");
+	const builtInItem = createElement(
+		"li",
+		"popup-instance-item popup-instance-item-built-in",
+	);
 	const builtInLabel = createElement("span", "popup-instance-label");
 	builtInLabel.textContent = originToHostname(state.builtInOrigin);
 	const builtInBadge = createElement("span", "popup-instance-badge");
@@ -186,9 +226,13 @@ function renderInstanceList(container: HTMLElement, state: PopupState): void {
 		removeButton.title = `Deregister ${origin}`;
 		removeButton.textContent = "−";
 		removeButton.addEventListener("click", () => {
-			void deregisterOrigin(origin).then(() => {
-				void renderPopup();
-			});
+			void (async () => {
+				if ((await getPendingReloadOrigin()) === origin) {
+					await clearPendingReloadOrigin();
+				}
+				await deregisterOrigin(origin);
+				await renderPopup();
+			})();
 		});
 		item.append(label, removeButton);
 		list.append(item);
@@ -205,11 +249,13 @@ async function renderPopup(): Promise<void> {
 	}
 
 	root.replaceChildren();
-	const [state, activeTabUrl] = await Promise.all([
+	const [state, activeTabUrl, pendingReloadOrigin] = await Promise.all([
 		loadPopupState(),
 		getActiveTabUrl(),
+		getPendingReloadOrigin(),
 	]);
-	renderRegisterSection(root, state, activeTabUrl);
+	renderBrand(root);
+	renderRegisterSection(root, state, activeTabUrl, pendingReloadOrigin);
 	renderInstanceList(root, state);
 }
 
